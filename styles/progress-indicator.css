@@ -1,0 +1,460 @@
+/* ==========================================================================
+   VectHare Progress Modal - "Glass Ring" Radical Redesign
+   ========================================================================== */
+
+/* --- Overlay & Modal Base --- */
+.ragbooks-progress-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.ragbooks-progress-modal {
+    width: 100%;
+    max-width: 380px;
+    background: linear-gradient(145deg, rgba(30,30,30,0.9), rgba(15,15,15,0.95));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.6), 
+                0 0 0 1px rgba(255,255,255,0.05) inset;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px;
+    position: relative;
+    animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* --- The Central Ring (Hero) --- */
+.ragbooks-ring-container {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ragbooks-ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.3));
+}
+
+.ragbooks-ring-bg {
+    fill: none;
+    stroke: rgba(255,255,255,0.05);
+    stroke-width: 6;
+}
+
+.ragbooks-ring-progress {
+    fill: none;
+    stroke: var(--ragbooks-primary, #6366f1);
+    stroke-width: 6;
+    stroke-dasharray: 452; /* 2 * PI * 72 */
+    stroke-dashoffset: 452;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Indeterminate State */
+.ragbooks-ring-container.indeterminate .ragbooks-ring-progress {
+    stroke-dasharray: 300;
+    animation: ringSpin 2s linear infinite;
+    transform-origin: center;
+}
+
+@keyframes ringSpin { 100% { transform: rotate(360deg); } }
+
+/* Center Content */
+.ragbooks-ring-content {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 2;
+}
+
+.ragbooks-ring-icon {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #a5b4fc, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.ragbooks-ring-text {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--SmartThemeBodyColor);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+}
+
+/* --- Title & Subtitle --- */
+.ragbooks-progress-header {
+    text-align: center;
+    margin-bottom: 24px;
+    z-index: 2;
+}
+
+.ragbooks-progress-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--SmartThemeBodyColor);
+    margin-bottom: 6px;
+}
+
+.ragbooks-progress-subtitle {
+    font-size: 0.85rem;
+    color: var(--SmartThemeQuoteColor);
+    max-width: 280px;
+    line-height: 1.4;
+}
+
+/* --- Steps (Minimalist Dots) --- */
+.ragbooks-progress-steps {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    z-index: 2;
+}
+
+.rag-step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+}
+
+.rag-step-dot.active {
+    background: var(--ragbooks-primary, #6366f1);
+    box-shadow: 0 0 10px var(--ragbooks-primary, #6366f1);
+    transform: scale(1.2);
+}
+
+.rag-step-dot.completed {
+    background: #10b981;
+}
+
+/* --- Active Step Label --- */
+.rag-active-step-label {
+    font-size: 0.9rem;
+    color: var(--SmartThemeBodyColor);
+    margin-bottom: 4px;
+    font-weight: 500;
+    height: 20px; /* Prevent jump */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rag-step-counter {
+    font-size: 0.75rem;
+    color: var(--SmartThemeQuoteColor);
+    margin-bottom: 24px;
+}
+
+/* --- Stats (Mini Cards) --- */
+.ragbooks-progress-stats {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.rag-stat-card {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.rag-stat-val {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--SmartThemeBodyColor);
+}
+
+.rag-stat-label {
+    font-size: 0.7rem;
+    color: var(--SmartThemeQuoteColor);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- Cancel Button --- */
+.rag-cancel-btn {
+    background: transparent;
+    border: none;
+    color: var(--SmartThemeQuoteColor);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+.rag-cancel-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* --- Success / Error Modifications --- */
+.ragbooks-progress-modal.success .ragbooks-ring-progress { stroke: #10b981; }
+.ragbooks-progress-modal.success .ragbooks-ring-icon { 
+    background: linear-gradient(135deg, #4ade80, #10b981);
+    -webkit-background-clip: text;
+}
+
+.ragbooks-progress-modal.error .ragbooks-ring-progress { stroke: #ef4444; }
+.ragbooks-progress-modal.error .ragbooks-ring-icon { 
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    -webkit-background-clip: text;
+}/* ============================================================================
+ * PROGRESS PANEL
+ * ============================================================================ */
+
+.vecthare-progress-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 420px;
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--vecthare-primary) 12%, var(--SmartThemeBlurTintColor)) 0%,
+        color-mix(in srgb, var(--vecthare-primary) 6%, var(--SmartThemeBlurTintColor)) 100%);
+    border: 2px solid color-mix(in srgb, var(--vecthare-primary) 30%, var(--SmartThemeBorderColor));
+    border-radius: 16px;
+    box-shadow:
+        0 10px 40px color-mix(in srgb, black 25%, transparent),
+        0 4px 12px color-mix(in srgb, var(--vecthare-primary) 20%, transparent),
+        inset 0 1px 2px color-mix(in srgb, white 8%, transparent);
+    backdrop-filter: blur(20px);
+    z-index: 10000;
+    overflow: hidden;
+    animation: vecthare-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes vecthare-slide-in {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.vecthare-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: color-mix(in srgb, var(--vecthare-primary) 15%, var(--SmartThemeBlurTintColor));
+    border-bottom: 1px solid color-mix(in srgb, var(--vecthare-primary) 20%, var(--SmartThemeBorderColor));
+}
+
+.vecthare-progress-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--SmartThemeBodyColor);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vecthare-progress-close {
+    background: none;
+    border: none;
+    color: var(--SmartThemeBodyColor);
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.vecthare-progress-close:hover {
+    opacity: 1;
+    background: color-mix(in srgb, var(--vecthare-primary) 20%, transparent);
+}
+
+.vecthare-progress-body {
+    padding: 20px;
+}
+
+.vecthare-progress-section {
+    margin-bottom: 20px;
+}
+
+.vecthare-progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: var(--SmartThemeBodyColor);
+}
+
+.vecthare-progress-percent {
+    color: var(--vecthare-primary-bright);
+    font-weight: 700;
+}
+
+.vecthare-progress-bar-container {
+    width: 100%;
+    height: 12px;
+    background: color-mix(in srgb, black 20%, var(--SmartThemeBlurTintColor));
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px color-mix(in srgb, black 20%, transparent);
+}
+
+.vecthare-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg,
+        var(--vecthare-primary) 0%,
+        var(--vecthare-primary-bright) 100%);
+    border-radius: 10px;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--vecthare-primary) 40%, transparent);
+    position: relative;
+    overflow: hidden;
+}
+
+.vecthare-progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        color-mix(in srgb, white 30%, transparent) 50%,
+        transparent 100%);
+    animation: vecthare-shimmer 2s infinite;
+}
+
+@keyframes vecthare-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.vecthare-progress-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.vecthare-progress-stat {
+    background: color-mix(in srgb, var(--vecthare-primary) 8%, var(--SmartThemeBlurTintColor));
+    border: 1px solid color-mix(in srgb, var(--vecthare-primary) 15%, var(--SmartThemeBorderColor));
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+}
+
+.vecthare-progress-stat-label {
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.7;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.vecthare-progress-stat-value {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--vecthare-primary-bright);
+}
+
+.vecthare-progress-current {
+    text-align: center;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    background: color-mix(in srgb, var(--vecthare-primary) 10%, var(--SmartThemeBlurTintColor));
+    border: 1px solid color-mix(in srgb, var(--vecthare-primary) 20%, var(--SmartThemeBorderColor));
+    border-radius: 8px;
+    font-size: 0.9em;
+    color: var(--vecthare-primary-bright);
+    font-family: var(--monoFontFamily);
+}
+
+.vecthare-progress-errors {
+    background: color-mix(in srgb, var(--vecthare-danger) 10%, var(--SmartThemeBlurTintColor));
+    border: 1px solid color-mix(in srgb, var(--vecthare-danger) 30%, var(--SmartThemeBorderColor));
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 16px;
+}
+
+.vecthare-progress-errors-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--vecthare-danger);
+    margin-bottom: 10px;
+    font-size: 0.95em;
+}
+
+.vecthare-progress-errors-list {
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.vecthare-progress-error-item {
+    padding: 8px;
+    background: color-mix(in srgb, var(--vecthare-danger) 5%, var(--SmartThemeBlurTintColor));
+    border-left: 3px solid var(--vecthare-danger);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+    color: var(--SmartThemeBodyColor);
+}
+
+.vecthare-progress-error-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .vecthare-progress-panel {
+        width: calc(100% - 40px);
+        left: 20px;
+        right: 20px;
+    }
+
+    .vecthare-progress-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
