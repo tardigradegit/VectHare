@@ -71,6 +71,12 @@ import { testConditionalActivation } from './activation-tests.js';
 
 import { runVisualizerTests } from './visualizer-tests.js';
 import { cleanupTestCollections } from '../core/collection-loader.js';
+import AsyncUtils from '../utils/async-utils.js';
+
+// Pause between production tests that hit a real embedding API, matching the
+// throttle in runVisualizerTests() - avoids tripping a provider-side rate
+// limit when a full diagnostics run fires many embedding calls back-to-back.
+const API_TEST_THROTTLE_MS = 1000;
 
 /**
  * Runs all diagnostic checks
@@ -218,9 +224,15 @@ export async function runDiagnostics(settings, includeProductionTests = false) {
 
     // ========== PRODUCTION TESTS (Optional) ==========
     if (includeProductionTests) {
+        // These four hit a real embedding API - space them out (runVisualizerTests
+        // just ran 6 more of the same kind of call immediately before this).
+        await AsyncUtils.sleep(API_TEST_THROTTLE_MS);
         categories.production.push(await testEmbeddingGeneration(settings));
+        await AsyncUtils.sleep(API_TEST_THROTTLE_MS);
         categories.production.push(await testVectorStorage(settings));
+        await AsyncUtils.sleep(API_TEST_THROTTLE_MS);
         categories.production.push(await testVectorRetrieval(settings));
+        await AsyncUtils.sleep(API_TEST_THROTTLE_MS);
         categories.production.push(await testVectorDimensions(settings));
         categories.production.push(await testTemporalDecay(settings));
         categories.production.push(await testTemporallyBlindChunks(settings));

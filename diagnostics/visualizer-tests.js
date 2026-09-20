@@ -24,6 +24,11 @@ import {
 } from '../core/collection-metadata.js';
 import { unregisterCollection } from '../core/collection-loader.js';
 import { getStringHash } from '../../../../utils.js';
+import AsyncUtils from '../utils/async-utils.js';
+
+// Pause between tests that hit a real embedding API, so a full diagnostics run
+// doesn't fire a burst of requests that trips a third-party rate limit.
+const API_TEST_THROTTLE_MS = 1000;
 
 // Test collection prefix using new vh: format for proper multitenancy parsing
 // Format: vh:{type}:{sourceId} - Qdrant backend parses this correctly
@@ -730,14 +735,25 @@ export async function runVisualizerTests(settings, includeSlowTests = false) {
     results.push(checkHashGeneration());
     results.push(checkMetadataOperations());
 
-    // Slow checks (make API calls to backend)
+    // Slow checks (make API calls to backend). Each of these does at least one
+    // real embedding call, so pace them out to avoid tripping a provider-side
+    // rate limit when they all run back-to-back.
     if (includeSlowTests) {
-        results.push(await checkVectorInsert(settings));
-        results.push(await checkVectorDelete(settings));
-        results.push(await checkReVectorization(settings));
-        results.push(await checkSummaryVectorCreate(settings));
-        results.push(await checkSummaryVectorDelete(settings));
-        results.push(await checkBackendResponsiveness(settings));
+        const slowChecks = [
+            checkVectorInsert,
+            checkVectorDelete,
+            checkReVectorization,
+            checkSummaryVectorCreate,
+            checkSummaryVectorDelete,
+            checkBackendResponsiveness,
+        ];
+
+        for (let i = 0; i < slowChecks.length; i++) {
+            if (i > 0) {
+                await AsyncUtils.sleep(API_TEST_THROTTLE_MS);
+            }
+            results.push(await slowChecks[i](settings));
+        }
     }
 
     return results;
