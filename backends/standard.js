@@ -311,6 +311,9 @@ export class StandardBackend extends VectorBackend {
      * Uses native ST API
      */
     async deleteVectorItems(collectionId, hashes, settings) {
+        const providerParams = getProviderSpecificParams(settings, false);
+        const model = getModelFromSettings(settings);
+
         const response = await fetch('/api/vector/delete', {
             method: 'POST',
             headers: getRequestHeaders(),
@@ -318,6 +321,8 @@ export class StandardBackend extends VectorBackend {
                 collectionId: collectionId,
                 hashes: hashes,
                 source: settings.source || 'transformers',
+                model: model,
+                ...providerParams,
             }),
         });
 
