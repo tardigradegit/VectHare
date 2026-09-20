@@ -861,9 +861,12 @@ export async function queryCollection(collectionId, searchText, topK, settings) 
     const overfetchAmount = getOverfetchAmount(topK);
     // VEC-18: Track query latency for health dashboard
     const queryStart = Date.now();
+    const hasRateLimit = settings.rate_limit_calls > 0;
     let rawResults;
     try {
-        rawResults = await backend.queryCollection(collectionId, searchText, overfetchAmount, settings, queryVector);
+        rawResults = hasRateLimit
+            ? await dynamicRateLimiter.execute(() => backend.queryCollection(collectionId, searchText, overfetchAmount, settings, queryVector), settings)
+            : await backend.queryCollection(collectionId, searchText, overfetchAmount, settings, queryVector);
         const queryLatency = Date.now() - queryStart;
         recordQuery(settings?.vector_backend || 'standard', queryLatency);
     } catch (error) {
