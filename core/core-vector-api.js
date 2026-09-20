@@ -656,7 +656,10 @@ export async function insertVectorItems(collectionId, items, settings, onProgres
             const BATCH_SIZE = smallBatchProviders.includes(settings.source) ? 1 : configuredBatchSize;
             const batches = chunkArray(items, BATCH_SIZE);
 
-            const hasRateLimit = settings.rate_limit_calls > 0;
+            // Local providers (transformers, ollama, llamacpp, etc.) have no shared cloud
+            // quota to protect - rate-limiting them only adds pointless latency, and it's
+            // especially costly here since transformers/ollama are forced to BATCH_SIZE=1.
+            const hasRateLimit = settings.rate_limit_calls > 0 && !getProviderConfig(settings.source)?.local;
             console.log(`VectHare: Processing ${items.length} items in ${batches.length} batch(es) of up to ${BATCH_SIZE}${hasRateLimit ? ` with rate limit (Max ${settings.rate_limit_calls} calls / ${settings.rate_limit_interval}s)` : ''}`);
 
             for (let i = 0; i < batches.length; i++) {
@@ -861,7 +864,9 @@ export async function queryCollection(collectionId, searchText, topK, settings) 
     const overfetchAmount = getOverfetchAmount(topK);
     // VEC-18: Track query latency for health dashboard
     const queryStart = Date.now();
-    const hasRateLimit = settings.rate_limit_calls > 0;
+    // Local providers have no shared cloud quota to protect - see the matching
+    // comment on the insert path above.
+    const hasRateLimit = settings.rate_limit_calls > 0 && !getProviderConfig(settings.source)?.local;
     let rawResults;
     try {
         rawResults = hasRateLimit
