@@ -393,23 +393,25 @@ export function checkCollectionIdFormat() {
         };
     }
 
-    if (parsed.prefix !== 'vh') {
+    if (parsed.type !== 'chat') {
         return {
             name: 'Collection ID Format',
             status: 'fail',
-            message: `Collection ID missing 'vh' prefix: ${collectionId}`,
+            message: `Expected a chat-type collection ID, got '${parsed.type}': ${collectionId}`,
             category: 'configuration'
         };
     }
 
     // UUID format check (should be like a1b2c3d4-e5f6-7890-abcd-ef1234567890)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const isValidUUID = uuidRegex.test(parsed.sourceId);
+    // rawId is "{sanitizedCharName}_{uuid}", so search for the UUID rather than exact-matching it
+    const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+    const uuidMatch = parsed.rawId.match(uuidRegex);
+    const isValidUUID = uuidMatch !== null;
 
     return {
         name: 'Collection ID Format',
         status: 'pass',
-        message: `${parsed.type}:${parsed.sourceId.substring(0, 8)}... (${isValidUUID ? 'UUID' : 'fallback ID'})`,
+        message: `${parsed.type}:${(uuidMatch ? uuidMatch[0] : parsed.rawId).substring(0, 8)}... (${isValidUUID ? 'UUID' : 'fallback ID'})`,
         category: 'configuration'
     };
 }

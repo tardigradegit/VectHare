@@ -963,6 +963,70 @@ function findCollectionByKey(key) {
 }
 
 /**
+ * Fetches all chunks (hash + text + metadata) for a collection, for the visualizer.
+ * Tries the Similharity plugin's list endpoint first (richer metadata, and required
+ * for the lancedb/qdrant/milvus backends). Falls back to a native broad vector query
+ * for the standard/vectra backend, which never needs the plugin - the native
+ * /api/vector/* API has no "list all chunks" endpoint, but a query with an empty
+ * search string returns every stored item unfiltered (same trick fixDuplicateHashes()
+ * in diagnostics/production-tests.js already uses). Note this fallback is capped at
+ * ~100 chunks by queryCollection()'s overfetch limit, same as that existing usage.
+ * @param {object} collection Collection descriptor from browserState.collections
+ * @param {object} collectionSettings VectHare settings scoped to this collection's backend
+ * @returns {Promise<object[]>} Normalized chunk objects for the visualizer
+ */
+async function fetchCollectionChunks(collection, collectionSettings) {
+  try {
+    const response = await fetch("/api/plugins/similharity/chunks/list", {
+      method: "POST",
+      headers: getRequestHeaders(),
+      body: JSON.stringify({
+        backend: collection.backend || "vectra",
+        collectionId: collection.id,
+        source: collection.source || "transformers",
+        model: collection.model || "",
+        limit: 1000, // Get first 1000 chunks
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // Support all plugin response shapes: items (new), chunks/results (older/backends)
+      const results = data.items || data.chunks || data.results || [];
+      return results.map((item, idx) => ({
+        hash: item.hash,
+        index: item.index ?? idx,
+        text: item.text || item.metadata?.text || "No text available",
+        score: 1.0,
+        similarity: 1.0,
+        messageAge: item.metadata?.messageAge,
+        decayApplied: false,
+        decayMultiplier: 1.0,
+        metadata: item.metadata, // Pass through all metadata including keywords
+      }));
+    }
+  } catch (e) {
+    console.warn("VectHare DB Browser: Plugin chunk list unavailable, trying native fallback", e);
+  }
+
+  const result = await queryCollection(collection.id, "", 1000, {
+    ...collectionSettings,
+    score_threshold: 0,
+  });
+
+  return (result.metadata || []).map((item, idx) => ({
+    hash: item.hash,
+    index: item.index ?? idx,
+    text: item.text || "No text available",
+    score: 1.0,
+    similarity: 1.0,
+    decayApplied: false,
+    decayMultiplier: 1.0,
+    metadata: {},
+  }));
+}
+
+/**
  * Performs PNG export with optional custom image
  * @param {File|null} imageFile - Custom image file or null for default
  */
@@ -1165,7 +1229,6 @@ function bindCollectionCardEvents() {
   $(".vecthare-action-visualize")
     .off("click")
     .on("click", async function (e) {
-      console.log("test");
       e.stopPropagation();
       const collectionKey = $(this).data("collection-key");
       const collection = findCollectionByKey(collectionKey);
@@ -1191,48 +1254,12 @@ function bindCollectionCardEvents() {
           vector_backend: collection.backend,
         };
 
-        // Use unified plugin endpoint
-        const requestBody = {
-          backend: collection.backend || "vectra",
-          collectionId: collection.id,
-          source: collection.source || "transformers",
-          model: collection.model || "",
-          limit: 1000, // Get first 1000 chunks
-        };
+        const chunks = await fetchCollectionChunks(collection, collectionSettings);
 
-        console.log("VectHare DB Browser: Requesting chunks with:", requestBody);
-
-        const response = await fetch("/api/plugins/similharity/chunks/list", {
-          method: "POST",
-          headers: getRequestHeaders(),
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to list chunks: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        // Support all plugin response shapes: items (new), chunks/results (older/backends)
-        const results = data.items || data.chunks || data.results || [];
-
-        if (!results || results.length === 0) {
+        if (!chunks || chunks.length === 0) {
           toastr.warning("No chunks found in this collection", "VectHare");
           return;
         }
-
-        // Format chunks for visualizer
-        const chunks = results.map((item, idx) => ({
-          hash: item.hash,
-          index: item.index ?? idx,
-          text: item.text || item.metadata?.text || "No text available",
-          score: 1.0,
-          similarity: 1.0,
-          messageAge: item.metadata?.messageAge,
-          decayApplied: false,
-          decayMultiplier: 1.0,
-          metadata: item.metadata, // Pass through all metadata including keywords
-        }));
 
         // Pass collection-specific settings so visualizer uses correct backend for edits/deletes
         // Include collection type so visualizer knows if this is a chat (for Scenes tab)
@@ -3323,43 +3350,12 @@ function renderSearchResults(results, query, originalResults = null) {
           vector_backend: collection.backend,
         };
 
-        // Use unified plugin endpoint
-        const response = await fetch("/api/plugins/similharity/chunks/list", {
-          method: "POST",
-          headers: getRequestHeaders(),
-          body: JSON.stringify({
-            backend: collection.backend || "vectra",
-            collectionId: collection.id,
-            source: collection.source || "transformers",
-            model: collection.model || "",
-            limit: 1000, // Get first 1000 chunks
-          }),
-        });
+        const chunks = await fetchCollectionChunks(collection, collectionSettings);
 
-        if (!response.ok) {
-          throw new Error(`Failed to list chunks: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const results = data.items || [];
-
-        if (!results || results.length === 0) {
+        if (!chunks || chunks.length === 0) {
           toastr.warning("No chunks found in this collection", "VectHare");
           return;
         }
-
-        // Format chunks for visualizer
-        const chunks = results.map((item, idx) => ({
-          hash: item.hash,
-          index: item.index ?? idx,
-          text: item.text || item.metadata?.text || "No text available",
-          score: 1.0,
-          similarity: 1.0,
-          messageAge: item.metadata?.messageAge,
-          decayApplied: false,
-          decayMultiplier: 1.0,
-          metadata: item.metadata, // Pass through all metadata including keywords
-        }));
 
         // Pass collection-specific settings so visualizer uses correct backend for edits/deletes
         // Include collection type so visualizer knows if this is a chat (for Scenes tab)

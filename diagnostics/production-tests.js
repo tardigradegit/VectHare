@@ -1306,8 +1306,11 @@ export async function testKeywordBoosting(settings) {
         }
 
         // Verify boost was applied correctly
-        // Expected boost: 1 + (2.0 - 1) + (1.5 - 1) = 2.5x
-        const expectedBoost = 2.5;
+        // Per-keyword contribution is capped at MAX_KEYWORD_CONTRIBUTION (0.5), then the summed
+        // boost is scaled by MATCH_SCALING_FACTORS[matchCount] (diminishing returns):
+        // raw contributions: min(2.0-1, 0.5)=0.5, min(1.5-1, 0.5)=0.5 -> boostSum=1.0
+        // 2 matches -> scale 0.60 -> finalBoost = 1 + (1.0 * 0.60) = 1.6x
+        const expectedBoost = 1.6;
         const actualBoost = doc1Boosted.keywordBoost;
 
         if (Math.abs(actualBoost - expectedBoost) > 0.01) {
@@ -1329,8 +1332,8 @@ export async function testKeywordBoosting(settings) {
             };
         }
 
-        // Verify new score is correct (0.70 * 2.5 = 1.75, but should be capped or not)
-        const expectedNewScore = 0.70 * 2.5;
+        // Verify new score is correct (0.70 * 1.6 = 1.12, capped at 1.0)
+        const expectedNewScore = Math.min(1.0, 0.70 * 1.6);
         if (Math.abs(doc1Boosted.score - expectedNewScore) > 0.01) {
             return {
                 name: '[PROD] Keyword Boosting',

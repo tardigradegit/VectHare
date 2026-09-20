@@ -990,12 +990,8 @@ export async function shouldCollectionActivate(collectionId, context) {
     }
 
     // Priority 5: No triggers AND no conditions = auto-activate (backwards compatible)
-    //console.log(`[VectHare Activation Filter] Collection ${collectionId}: ✓ AUTO_ACTIVATED (no triggers/conditions configured - BACKWARDS COMPAT MODE)`);
-    //return true;
-
-    //Priority 5: No triggers AND no conditions = do not activate
-    console.log(`[VectHare Activation Filter] Collection ${collectionId}: ✗ NO_TRIGGERS_OR_CONDITIONS (not activating)`);
-    return false;
+    console.log(`[VectHare Activation Filter] Collection ${collectionId}: ✓ AUTO_ACTIVATED (no triggers/conditions configured - BACKWARDS COMPAT MODE)`);
+    return true;
 }
 
 /**
